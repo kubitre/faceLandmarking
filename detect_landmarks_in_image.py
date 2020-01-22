@@ -8,6 +8,10 @@ import cv2
 # Run the 3D face alignment on a test image, without CUDA.
 fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._3D, device='cpu', flip_input=False)
 
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+
+out = cv2.VideoWriter('output.avi',fourcc, 20.0, (1280, 720))
+
 testSource = cv2.VideoCapture(0)
 
 pred_type = collections.namedtuple('prediction_type', ['slice', 'color'])
@@ -23,7 +27,32 @@ pred_types = {'face': pred_type(slice(0, 17), (0.682, 0.780, 0.909, 0.5)),
               }
 
 def pipeline(frame, index):
+    # resize_frame = cv2.resize(frame, (1260, 780))
+    # cv2.imshow("before_landmarking: ", frame)
     preds = fa.get_landmarks(frame)[-1]
+    fig = plt.figure(figsize=plt.figaspect(.5))
+    ax = fig.add_subplot(1, 2, 1)
+    print(preds[0:17])
+    eye1_point1_x = preds[36]
+    eye2_point2_x = preds[45]
+    face_27_z = preds[27]
+    face_33_y = preds[33]
+    centr_betweeb_eyes = (int((eye2_point2_x[0]-eye1_point1_x[0])/2), int((eye2_point2_x[1] - eye1_point1_x[0])/2))
+
+    cv2.line(frame, (eye1_point1_x[0], eye1_point1_x[1]), (eye2_point2_x[0], eye2_point2_x[1]), (255,0,0), 3)
+    cv2.line(frame, (face_27_z[0], face_27_z[1]), (centr_betweeb_eyes[0], centr_betweeb_eyes[1]), (0, 255, 0), 3)
+    cv2.line(frame, (face_33_y[0], face_33_y[1]), (centr_betweeb_eyes[0], centr_betweeb_eyes[1]), (0,0,255), 3)
+    print("size image: ", frame.size)
+    for num in preds:
+        print("num: ", num)
+        cv2.circle(frame, (num[0], num[1]), 2, (178, 202, 132), -1)
+    # cv2.imshow("test", frame)
+
+    
+    cv2.imwrite("test.png", frame)
+    # out.write(frame)
+    # cv2.circle(frame, (preds[0:17][0])
+    # ax.imshow(frame)
     # ax.axis('off')
     # ax = fig.add_subplot(1, 2, 2, projection='3d')
     # surf = ax.scatter(preds[:, 0] * 1.2,
@@ -42,7 +71,7 @@ def pipeline(frame, index):
     # ax.set_xlim(ax.get_xlim()[::-1])
     # fig.savefig("demo"+index+".png", bbox_inches='tight')
     # fig.
-    print("getting landmarks: ", preds)
+    # print("getting landmarks: ", preds)
 
 # try:
 #     input_img = io.imread('../test/assets/aflw-test.jpg')
@@ -62,12 +91,13 @@ cur_snap = 0
 while testSource.isOpened():
     ret, frame = testSource.read()
     frame = cv2.flip(frame,1)
-    pipeline(frame,cur_snap )
+    pipeline(frame,cur_snap)
     cur_snap += 1
+    break
+    
+# cv2.destroyAllWindows()
 
-# fig = plt.figure(figsize=plt.figaspect(.5))
-# ax = fig.add_subplot(1, 2, 1)
-# ax.imshow(input_img)
+
 
 # for pred_type in pred_types.values():
 #     ax.plot(preds[pred_type.slice, 0],
